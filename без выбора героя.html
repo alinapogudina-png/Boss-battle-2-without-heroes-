@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boss Battle Builder - ELT Workshop</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&display=swap');
+        
+        body { font-family: 'Poppins', sans-serif; background-color: #68a0a6; color: #ffffff; display: flex; padding: 20px; gap: 20px; height: 100vh; margin: 0; box-sizing: border-box; overflow: hidden; position: relative; }
+        
+        body::before { content: ''; position: absolute; inset: 0; background-image: radial-gradient(circle at 20% 40%, rgba(255, 255, 255, 0.1), transparent 40%), radial-gradient(circle at 80% 60%, rgba(0, 0, 0, 0.1), transparent 40%); z-index: -1; }
+
+        .editor-panel, .preview-panel { background-color: rgba(20, 40, 45, 0.8); backdrop-filter: blur(12px); padding: 25px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); border: 1px solid rgba(255, 255, 255, 0.1); z-index: 1; }
+        .editor-panel { width: 45%; display: flex; flex-direction: column; overflow-y: auto; }
+        .preview-panel { width: 55%; display: flex; flex-direction: column; position: relative; }
+        
+        .editor-panel::-webkit-scrollbar { width: 8px; }
+        .editor-panel::-webkit-scrollbar-thumb { background: #45787d; border-radius: 4px; }
+        
+        h1 { color: #facc15; font-weight: 800; font-size: 26px; margin: 0 0 5px 0; text-align: center; text-transform: uppercase; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);}
+        .subtitle { text-align: center; color: #a5d8dd; font-size: 12px; margin-bottom: 20px; letter-spacing: 0.5px;}
+        h3 { color: #facc15; font-size: 15px; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 5px; margin-top: 20px; text-transform: uppercase; letter-spacing: 1px;}
+        
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 6px; font-weight: 600; font-size: 11px; color: #a5d8dd; text-transform: uppercase;}
+        input[type="text"], select, textarea, input[type="number"] { width: 100%; padding: 10px 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); background-color: rgba(0,0,0,0.3); color: #fff; box-sizing: border-box; font-family: 'Poppins', sans-serif; font-size: 13px; transition: 0.3s; }
+        input[type="text"]:focus, select:focus, textarea:focus, input[type="number"]:focus { border-color: #facc15; outline: none; box-shadow: 0 0 10px rgba(250, 204, 21, 0.3); }
+        input[type="color"] { padding: 0; border: none; width: 100%; height: 36px; border-radius: 8px; cursor: pointer; background: transparent; }
+        textarea { resize: vertical; min-height: 100px; white-space: pre; }
+        
+        .flex-row { display: flex; gap: 15px; align-items: flex-start; margin-bottom: 10px; flex-wrap: wrap; }
+        .flex-col { flex: 1; min-width: 120px; }
+        
+        .checkbox-label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; color: #fff; background: rgba(0,0,0,0.2); padding: 10px 15px; border-radius: 10px;}
+        .checkbox-label input { width: 18px; height: 18px; cursor: pointer; accent-color: #facc15;}
+
+        #previewFrame { width: 100%; flex: 1; border: 2px dashed rgba(255,255,255,0.2); border-radius: 15px; background-color: #000; }
+        
+        button.gen-btn { background: linear-gradient(135deg, #d97706, #facc15); color: #000; padding: 15px; border: none; border-radius: 12px; cursor: pointer; font-size: 16px; font-weight: 800; transition: 0.3s; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); margin-top: 20px;}
+        button.gen-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(250, 204, 21, 0.4); }
+        
+        #generated-code { height: 60px; margin-top: 10px; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.2); color: #4ae38c; font-family: monospace; font-size: 11px;}
+        .help-text { font-size: 11px; color: #8bbdc2; margin-top: 5px; line-height: 1.4;}
+        .help-text span { color: #facc15; font-weight: bold;}
+    </style>
+</head>
+<body>
+
+    <div class="editor-panel">
+        <h1>Boss Battle Builder</h1>
+        <div class="subtitle">Alina Pogudina 2026 @ELT_workshop</div>
+        
+        <div class="flex-row">
+            <div class="form-group flex-col">
+                <label>Тип задания</label>
+                <select id="taskType" onchange="debounceGenerate()">
+                    <option value="quiz" selected>Выбор ответа (Квиз)</option>
+                    <option value="input">Впиши слово (с клавиатуры)</option>
+                </select>
+            </div>
+            <div class="form-group flex-col">
+                <label>Язык интерфейса</label>
+                <select id="uiLang" onchange="debounceGenerate()">
+                    <option value="EN" selected>English</option>
+                    <option value="RU">Русский</option>
+                    <option value="ES">Español</option>
+                    <option value="FR">Français</option>
+                    <option value="DE">Deutsch</option>
+                    <option value="IT">Italiano</option>
+                    <option value="PT">Português</option>
+                    <option value="TR">Türkçe</option>
+                </select>
+            </div>
+        </div>
+
+        <h3>Визуальные настройки</h3>
+        <div class="flex-row">
+            <div class="form-group flex-col">
+                <label>Шрифт игры</label>
+                <select id="aFont" onchange="debounceGenerate()">
+                    <option value="'Jura', sans-serif" selected>Jura</option>
+                    <option value="'Neucha', cursive">Neucha</option>
+                    <option value="'Montserrat', sans-serif">Montserrat</option>
+                    <option value="'Bangers', cursive">Bangers</option>
+                    <option value="'Russo One', sans-serif">Russo One</option>
+                    <option value="'Caveat', cursive">Caveat</option>
+                    <option value="'Roboto', sans-serif">Roboto</option>
+                    <option value="'Open Sans', sans-serif">Open Sans</option>
+                    <option value="'PT Sans', sans-serif">PT Sans</option>
+                    <option value="'Lobster', cursive">Lobster</option>
+                    <option value="'Pacifico', cursive">Pacifico</option>
+                    <option value="'Amatic SC', cursive">Amatic SC</option>
+                    <option value="'Comfortaa', sans-serif">Comfortaa</option>
+                    <option value="'Alice', serif">Alice</option>
+                    <option value="'Marmelad', sans-serif">Marmelad</option>
+                    <option value="'Yanone Kaffeesatz', sans-serif">Yanone Kaffeesatz</option>
+                    <option value="'Philosopher', sans-serif">Philosopher</option>
+                </select>
+            </div>
+            <div class="form-group flex-col"><label>Цвет Текста</label><input type="color" id="aColor" value="#facc15" onchange="debounceGenerate()"></div>
+            <div class="form-group flex-col"><label>Цвет Неона</label><input type="color" id="neonColor" value="#00ffff" onchange="debounceGenerate()"></div>
+        </div>
+        
+        <div class="flex-row">
+            <div class="form-group flex-col">
+                <label>Размер Вопроса (px)</label>
+                <input type="number" id="qSize" value="26" min="14" max="60" oninput="debounceGenerate()">
+            </div>
+            <div class="form-group flex-col">
+                <label>Размер Ответов (px)</label>
+                <input type="number" id="aSize" value="18" min="10" max="40" oninput="debounceGenerate()">
+            </div>
+        </div>
+
+        <div class="flex-row">
+            <div class="form-group flex-col">
+                <label>Размер Героя (% высоты экрана)</label>
+                <input type="number" id="heroSize" value="55" min="20" max="90" oninput="debounceGenerate()">
+            </div>
+            <div class="form-group flex-col">
+                <label>Размер Босса (% высоты экрана)</label>
+                <input type="number" id="bossSize" value="55" min="20" max="90" oninput="debounceGenerate()">
+            </div>
+        </div>
+
+        <div class="flex-row">
+            <div class="form-group flex-col">
+                <label>Стиль ударов</label>
+                <select id="attackType" onchange="debounceGenerate()">
+                    <option value="fire" selected>Огонь</option>
+                    <option value="lightning">Молния</option>
+                    <option value="magic">Магия (Зеленая)</option>
+                </select>
+            </div>
+            <div class="form-group flex-col">
+                <label class="checkbox-label" style="margin-top: 15px;">
+                    <input type="checkbox" id="useSound" checked onchange="debounceGenerate()"> Звуки (Вкл)
+                </label>
+            </div>
+        </div>
+
+        <h3>Тексты и Картинки (Ссылки)</h3>
+        <div class="flex-row">
+            <div class="form-group flex-col">
+                <label>Заголовок стартового экрана</label>
+                <input type="text" id="startTitle" value="READY FOR BATTLE?" oninput="debounceGenerate()">
+            </div>
+            <div class="form-group flex-col">
+                <label>Текст кнопки Старт</label>
+                <input type="text" id="startBtnText" value="START" oninput="debounceGenerate()">
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label>Фон игры</label>
+            <input type="text" id="bgImg" value="https://i.postimg.cc/JnhHQ215/7a1ae0d06ba097f538c69e05901229d3-2b9ef9d7-f0d4-4c71-b4d0-9b8a30603457.jpg" oninput="debounceGenerate()">
+        </div>
+        <div class="form-group">
+            <label>Босс</label>
+            <input type="text" id="bossImg" value="https://i.postimg.cc/pLtkRzYd/Untitled-design.png" oninput="debounceGenerate()">
+        </div>
+        <div class="form-group">
+            <label>Герой</label>
+            <input type="text" id="heroImg" value="https://i.postimg.cc/Jz16jjyn/Untitled-design2.png" oninput="debounceGenerate()">
+        </div>
+        <div class="flex-row">
+            <div class="form-group flex-col"><label>Снаряд Героя</label><input type="text" id="heroProj" value="https://i.postimg.cc/kGw2trRn/pngwing-com-(63).png" oninput="debounceGenerate()"></div>
+            <div class="form-group flex-col"><label>Снаряд Босса</label><input type="text" id="bossProj" value="https://i.postimg.cc/5ypXFcQ4/pngwing-com-(31).png" oninput="debounceGenerate()"></div>
+        </div>
+        <div class="form-group">
+            <label>Иконка жизни / Сердечко</label>
+            <input type="text" id="heartImg" value="https://i.postimg.cc/KvL74jJr/pngwing-com-(80).png" oninput="debounceGenerate()">
+        </div>
+
+        <h3>Логика Игры</h3>
+        <div class="flex-row" style="align-items: center;">
+            <div class="form-group flex-col" style="flex: 0.8;">
+                <label>Жизни (ошибки)</label>
+                <input type="number" id="maxErrors" value="3" min="1" max="10" oninput="debounceGenerate()">
+            </div>
+            <div class="form-group flex-col">
+                <label class="checkbox-label" style="margin-top: 10px;">
+                    <input type="checkbox" id="useTimer" onchange="debounceGenerate()"> Таймер
+                </label>
+            </div>
+            <div class="form-group flex-col" style="flex: 0.8;">
+                <label>Время (сек)</label>
+                <input type="number" id="timerSeconds" value="15" min="3" max="60" oninput="debounceGenerate()">
+            </div>
+        </div>
+
+        <div class="flex-row">
+            <div class="form-group flex-col"><label>Победа</label><input type="text" id="winMsg" value="You defeated the boss!" oninput="debounceGenerate()"></div>
+            <div class="form-group flex-col"><label>Поражение</label><input type="text" id="loseMsg" value="You lost!" oninput="debounceGenerate()"></div>
+        </div>
+
+        <h3>Вопросы и Ответы</h3>
+        <div class="flex-row">
+            <div class="form-group flex-col" style="flex: 1.2;">
+                <label>Вопросы</label>
+                <textarea id="qData" rows="6" oninput="debounceGenerate()">Until the rain stops, we ________ the house.
+If you ______ study, you won't pass the exam.
+If I ________ you, I would study more.</textarea>
+            </div>
+            <div class="form-group flex-col" style="flex: 1.5;">
+                <label>Ответы (правильный|ошибка|ошибка)</label>
+                <textarea id="aData" rows="6" oninput="debounceGenerate()">won't leave|leave|don't leave
+don't study|won't study|didn't study
+were|would be|am</textarea>
+                <div class="help-text">Если режим "Впиши слово", учитывается только <span>первое слово/фраза до черты</span>. Регистр не важен.</div>
+            </div>
+        </div>
+
+        <button class="gen-btn" id="copyBtn" onclick="copyCode()">Сгенерировать Iframe-код</button>
+        <textarea id="generated-code" readonly placeholder="Ваш код появится здесь..."></textarea>
+    </div>
+
+    <div class="preview-panel">
+        <h2 style="color: #fff; margin-top:0; font-size: 20px;">Предпросмотр</h2>
+        <iframe id="previewFrame" src="" frameborder="0" allow="autoplay"></iframe>
+    </div>
+
+    <script>
+        function getInputs() {
+            return {
+                taskType: document.getElementById('taskType').value,
+                lang: document.getElementById('uiLang').value,
+                startTitle: document.getElementById('startTitle').value,
+                startBtnText: document.getElementById('startBtnText').value,
+                aFont: document.getElementById('aFont').value,
+                aColor: document.getElementById('aColor').value,
+                neonColor: document.getElementById('neonColor').value,
+                qSize: document.getElementById('qSize').value + 'px',
+                aSize: document.getElementById('aSize').value + 'px',
+                heroSize: document.getElementById('heroSize').value + 'vh',
+                bossSize: document.getElementById('bossSize').value + 'vh',
+                bgImg: document.getElementById('bgImg').value,
+                bossImg: document.getElementById('bossImg').value,
+                heartImg: document.getElementById('heartImg').value,
+                heroImg: document.getElementById('heroImg').value,
+                heroProj: document.getElementById('heroProj').value || 'https://i.postimg.cc/kGw2trRn/pngwing-com-(63).png',
+                bossProj: document.getElementById('bossProj').value || 'https://i.postimg.cc/5ypXFcQ4/pngwing-com-(31).png',
+                attackType: document.getElementById('attackType').value,
+                useSound: document.getElementById('useSound').checked,
+                maxErrors: parseInt(document.getElementById('maxErrors').value) || 3,
+                useTimer: document.getElementById('useTimer').checked,
+                timerSeconds: parseInt(document.getElementById('timerSeconds').value) || 15,
+                winMsg: document.getElementById('winMsg').value,
+                loseMsg: document.getElementById('loseMsg').value,
+                qRaw: document.getElementById('qData').value,
+                aRaw: document.getElementById('aData').value
+            };
+        }
+
+        function buildQuizJSON(qText, aText) {
+            let qArr = qText.split('\n').map(x=>x.trim()).filter(x=>x!=='');
+            let aArr = aText.split('\n').map(x=>x.trim()).filter(x=>x!=='');
+            let data = [];
+            for(let i=0; i<Math.min(qArr.length, aArr.length); i++) {
+                let parts = aArr[i].split('|').map(x=>x.trim());
+                if(parts.length < 1) continue;
+                let opts = parts.map((p, idx) => ({ text: p, correct: idx === 0 }));
+                data.push({ question: qArr[i], options: opts });
+            }
+            return data.length ? data : [{ question: "Add questions!", options: [{text:"Ok", correct:true}] }];
+        }
+
+        function generateCode() {
+            const conf = getInputs();
+            const quizJSON = JSON.stringify(buildQuizJSON(conf.qRaw, conf.aRaw));
+
+            let projStyles = '';
+            if(conf.attackType === 'lightning') projStyles = 'filter: drop-shadow(0 0 15px #00ffff) hue-rotate(180deg) brightness(1.5);';
+            if(conf.attackType === 'magic') projStyles = 'filter: drop-shadow(0 0 15px #00ff00) hue-rotate(90deg) brightness(1.5);';
+
+            const finalScript = `
+    const dict = { 
+        EN: { replay: "START AGAIN", ok: "OK" }, 
+        RU: { replay: "ИГРАТЬ СНОВА", ok: "ОК" }, 
+        ES: { replay: "JUGAR DE NUEVO", ok: "OK" },
+        FR: { replay: "REJOUER", ok: "OK" },
+        DE: { replay: "NOCHMAL SPIELEN", ok: "OK" },
+        IT: { replay: "GIOCA DI NUOVO", ok: "OK" },
+        PT: { replay: "JOGAR NOVAMENTE", ok: "OK" },
+        TR: { replay: "TEKRAR OYNA", ok: "TAMAM" }
+    };
+    const lang = dict['${conf.lang}'] || dict['EN'];
+    
+    document.querySelector('.select-title').innerText = "${conf.startTitle}";
+    document.getElementById('replay-btn').innerText = lang.replay;
+
+    const quizData = ${quizJSON};
+    const taskMode = "${conf.taskType}";
+    const maxErrors = ${conf.maxErrors};
+    const useTimer = ${conf.useTimer};
+    const timerSeconds = ${conf.timerSeconds};
+    const heartImg = "${conf.heartImg}";
+    let soundEnabled = ${conf.useSound};
+    
+    let currentQ = 0, errors = 0, bossMaxHP = quizData.length, bossHP = bossMaxHP;
+    let timerInterval, timeLeft = timerSeconds, fwId;
+
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+    
+    window.toggleSound = function() {
+        soundEnabled = !soundEnabled;
+        document.getElementById('sound-btn').innerText = soundEnabled ? '🔊' : '🔇';
+        if(soundEnabled && !audioCtx) audioCtx = new AudioContext();
+    };
+
+    function playSound(type) {
+        if(!soundEnabled) return;
+        if(!audioCtx) audioCtx = new AudioContext();
+        if(audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        let now = audioCtx.currentTime;
+        if(type === 'hit') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.15);
+            gain.gain.setValueAtTime(0.3, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now); osc.stop(now + 0.15);
+        } else {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+            gain.gain.setValueAtTime(0.5, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now); osc.stop(now + 0.3);
+        }
+    }
+
+    window.startGame = function() {
+        if(soundEnabled && !audioCtx) audioCtx = new AudioContext();
+        document.getElementById('select-screen').style.display = 'none';
+        document.getElementById('end-screen').style.display = 'none';
+        document.getElementById('battle-screen').style.display = 'block';
+        document.getElementById('player-avatar').src = "${conf.heroImg}";
+        document.getElementById('hero-sprite').src = "${conf.heroImg}";
+        document.getElementById('sound-btn').innerText = soundEnabled ? '🔊' : '🔇';
+        
+        currentQ = 0; errors = 0; bossHP = bossMaxHP;
+        updateHPBar(); renderHearts(); loadQuestion();
+    };
+
+    function renderHearts() {
+        const hc = document.getElementById('hearts-container'); hc.innerHTML = '';
+        for(let i=0; i<maxErrors; i++) {
+            let img = document.createElement('img'); img.src = heartImg; img.className = 'heart';
+            if (i >= maxErrors - errors) img.classList.add('lost');
+            hc.appendChild(img);
+        }
+    }
+
+    function updateHPBar() {
+        let pct = (bossHP / bossMaxHP) * 100;
+        document.getElementById('boss-hp-bar').style.width = Math.max(0, pct) + '%';
+    }
+
+    function loadQuestion() {
+        if (currentQ >= quizData.length || errors >= maxErrors) { endGame(); return; }
+
+        let q = quizData[currentQ];
+        document.getElementById('q-text').innerText = q.question;
+        let grid = document.getElementById('options-grid'); grid.innerHTML = '';
+        
+        if(taskMode === 'quiz') {
+            let opts = [...q.options].sort(() => Math.random() - 0.5);
+            opts.forEach(opt => {
+                let btn = document.createElement('button');
+                btn.className = 'option-btn'; btn.innerText = opt.text;
+                btn.onclick = () => handleAnswer(btn, opt.correct);
+                grid.appendChild(btn);
+            });
+        } else {
+            let cont = document.createElement('div'); cont.className = 'input-mode-container';
+            let inp = document.createElement('input'); inp.type = 'text'; inp.className = 'word-input'; inp.placeholder = '...';
+            let btn = document.createElement('button'); btn.className = 'submit-btn'; btn.innerText = lang.ok;
+            
+            let correctOpt = q.options.find(o => o.correct);
+            let correctText = correctOpt ? correctOpt.text : '';
+
+            let checkFunc = () => {
+                if(inp.disabled) return;
+                let val = inp.value.trim().toLowerCase();
+                let isCorrect = (val === correctText.toLowerCase());
+                inp.disabled = true; btn.disabled = true;
+                if(isCorrect) {
+                    inp.style.borderColor = '#2ecc71'; inp.style.boxShadow = '0 0 20px #2ecc71';
+                } else {
+                    inp.style.borderColor = '#e74c3c'; inp.style.color = '#e74c3c'; inp.value = correctText;
+                    inp.style.boxShadow = '0 0 20px #e74c3c';
+                }
+                handleAnswer(null, isCorrect);
+            };
+
+            btn.onclick = checkFunc;
+            inp.onkeypress = (e) => { if(e.key === 'Enter') checkFunc(); };
+            
+            cont.appendChild(inp); cont.appendChild(btn); grid.appendChild(cont);
+            setTimeout(() => inp.focus(), 100);
+        }
+        startTimer();
+    }
+
+    function startTimer() {
+        if (!useTimer) return;
+        clearInterval(timerInterval); timeLeft = timerSeconds;
+        let bar = document.getElementById('timer-bar');
+        bar.style.transition = 'none'; bar.style.width = '100%'; bar.classList.remove('warning');
+        setTimeout(() => { bar.style.transition = 'width 1s linear, background-color 0.5s'; }, 50);
+
+        timerInterval = setInterval(() => {
+            timeLeft--; bar.style.width = ((timeLeft / timerSeconds) * 100) + '%';
+            if (timeLeft <= 5) bar.classList.add('warning');
+            if (timeLeft <= 0) { 
+                clearInterval(timerInterval); errors = maxErrors; handleAnswer(null, false); 
+            }
+        }, 1000);
+    }
+
+    function fireProjectile(isHero, callback) {
+        const h = document.getElementById('hero-sprite').getBoundingClientRect();
+        const b = document.getElementById('boss-sprite').getBoundingClientRect();
+        let proj = document.createElement('img');
+        proj.src = isHero ? "${conf.heroProj}" : "${conf.bossProj}";
+        proj.className = 'projectile';
+        
+        let startX = isHero ? (h.right - 80) : (b.left);
+        let startY = isHero ? (h.top + h.height/3) : (b.top + b.height/3);
+        let endX = isHero ? (b.left + 50) : (h.right - 100);
+        let endY = isHero ? (b.top + b.height/2) : (h.top + h.height/2);
+
+        if(!isHero) proj.style.transform = 'scaleX(-1)';
+
+        proj.style.left = startX + 'px'; proj.style.top = startY + 'px';
+        document.body.appendChild(proj);
+
+        setTimeout(() => { proj.style.left = endX + 'px'; proj.style.top = endY + 'px'; }, 50);
+        setTimeout(() => { proj.remove(); callback(); }, 450);
+    }
+
+    function handleAnswer(btn, isCorrect) {
+        clearInterval(timerInterval);
+        document.querySelectorAll('.option-btn, .word-input, .submit-btn').forEach(b => b.disabled = true);
+
+        if (isCorrect) {
+            if(btn) btn.classList.add('correct');
+            fireProjectile(true, () => {
+                playSound('hit'); bossHP--; updateHPBar(); animateBossHit();
+                setTimeout(() => { currentQ++; loadQuestion(); }, 1200);
+            });
+        } else {
+            if(btn) btn.classList.add('wrong');
+            if(taskMode === 'quiz') {
+                document.querySelectorAll('.option-btn').forEach(b => {
+                    let correctOpt = quizData[currentQ].options.find(o => o.correct);
+                    if(correctOpt && b.innerText === correctOpt.text) b.classList.add('correct');
+                });
+            }
+            fireProjectile(false, () => {
+                playSound('error');
+                if(timeLeft > 0) errors++; renderHearts(); animatePlayerHit();
+                setTimeout(() => { currentQ++; loadQuestion(); }, 1500);
+            });
+        }
+    }
+
+    function animateBossHit() {
+        let boss = document.getElementById('boss-sprite');
+        boss.classList.remove('boss-damaged'); void boss.offsetWidth; boss.classList.add('boss-damaged');
+        let dmg = document.createElement('div'); dmg.className = 'damage-text'; dmg.innerText = "-HIT!";
+        let rect = boss.getBoundingClientRect();
+        dmg.style.left = (rect.left + rect.width/2 - 20) + 'px'; dmg.style.top = (rect.top + rect.height/2) + 'px';
+        document.body.appendChild(dmg); setTimeout(() => dmg.remove(), 1000);
+    }
+
+    function animatePlayerHit() {
+        let hero = document.getElementById('hero-sprite');
+        hero.classList.remove('hero-damaged'); void hero.offsetWidth; hero.classList.add('hero-damaged');
+        let overlay = document.getElementById('dmg-overlay');
+        overlay.style.opacity = '0.3'; setTimeout(() => overlay.style.opacity = '0', 200);
+    }
+
+    function endGame() {
+        clearInterval(timerInterval);
+        let screen = document.getElementById('end-screen'); let msg = document.getElementById('end-msg');
+        screen.style.display = 'flex';
+        if (errors >= maxErrors) {
+            msg.innerText = "${conf.loseMsg}"; msg.style.color = "#ff4d4d"; msg.style.textShadow = "0 0 30px #ff4d4d";
+        } else {
+            msg.innerText = "${conf.winMsg}"; msg.style.color = "var(--neon)"; msg.style.textShadow = "0 0 30px var(--neon)";
+            fireworks(); fwId = setInterval(fireworks, 1500);
+        }
+        
+        document.getElementById('replay-btn').onclick = () => { 
+            clearInterval(fwId); 
+            document.getElementById('end-screen').style.display = 'none';
+            document.getElementById('battle-screen').style.display = 'none';
+            document.getElementById('select-screen').style.display = 'flex';
+        };
+    }
+
+    function fireworks() {
+        let cx = window.innerWidth / 2; let cy = window.innerHeight / 2; const c = ['#facc15', '#ff4d4d', '#2ecc71', '#3498db', '#ffffff'];
+        for(let i=0; i<50; i++) {
+            let p = document.createElement('div'); p.className = 'fw-particle'; p.style.left = cx + 'px'; p.style.top = cy + 'px';
+            p.style.background = c[Math.floor(Math.random() * c.length)]; let a = Math.random() * Math.PI * 2; let v = 50 + Math.random() * 200;
+            p.style.setProperty('--tx', Math.cos(a)*v + 'px'); p.style.setProperty('--ty', Math.sin(a)*v + 'px');
+            document.body.appendChild(p); setTimeout(() => p.remove(), 1000);
+        }
+    }
+    `;
+
+            const innerHTML = `<!DOCTYPE html>
+<html lang="${conf.lang.toLowerCase()}">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Alice&family=Amatic+SC:wght@400;700&family=Bangers&family=Caveat:wght@400;700&family=Comfortaa:wght@400;700&family=Jura:wght@400;700&family=Lobster&family=Marmelad&family=Montserrat:wght@400;600;800&family=Neucha&family=Open+Sans:wght@400;700&family=Pacifico&family=Philosopher:wght@400;700&family=PT+Sans:wght@400;700&family=Roboto:wght@400;700&family=Russo+One&family=Yanone+Kaffeesatz:wght@400;700&display=swap');
+    
+    :root {
+        --neon: ${conf.neonColor};
+        --text-col: ${conf.aColor};
+        --font: ${conf.aFont};
+        --q-size: ${conf.qSize};
+        --a-size: ${conf.aSize};
+        --hero-h: ${conf.heroSize};
+        --boss-h: ${conf.bossSize};
+    }
+
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent;}
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #000; overflow: hidden; font-family: var(--font); color: var(--text-col); letter-spacing: 1px;}
+    
+    #game-container {
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        background-image: url('${conf.bgImg}'); background-size: cover; background-position: center;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .damage-overlay { position: absolute; inset: 0; background: red; opacity: 0; pointer-events: none; z-index: 99; transition: opacity 0.1s;}
+
+    #select-screen { display: flex; flex-direction: column; align-items: center; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 100; width: 100%; height: 100%; justify-content: center; position: absolute;}
+    .select-title { font-size: clamp(40px, 7vw, 70px); text-shadow: 0 0 20px var(--neon); margin-bottom: 40px; text-align: center; font-weight: 800;}
+    
+    .start-btn { display: block; background: rgba(0,0,0,0.8); color: var(--neon); border: 2px solid var(--neon); padding: 15px 50px; font-size: 28px; font-family: var(--font); font-weight: 800; text-transform: uppercase; border-radius: 15px; cursor: pointer; transition: 0.3s; box-shadow: 0 0 20px rgba(0,0,0,0.8); animation: popIn 0.5s forwards; letter-spacing: 2px;}
+    .start-btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 40px var(--neon); }
+
+    #battle-screen { display: none; width: 100%; height: 100%; position: relative;}
+    .hud-hero { position: absolute; top: 20px; left: 20px; display: flex; flex-direction: row; align-items: center; gap: 15px; z-index: 10; background: rgba(0,0,0,0.6); padding: 10px 20px 10px 10px; border-radius: 50px; border: 1px solid rgba(255,255,255,0.2);}
+    .player-mini { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--neon); object-fit: cover; background: rgba(0,0,0,0.8); box-shadow: 0 0 15px var(--neon);}
+    .hearts-container { display: flex; gap: 10px; flex-wrap: wrap; align-items: center;}
+    .heart { width: 35px; height: 35px; object-fit: contain; filter: drop-shadow(0 2px 4px #000); transition: 0.3s;}
+    .heart.lost { filter: grayscale(100%) opacity(0.3); transform: scale(0.8);}
+
+    .hud-boss { position: absolute; top: 20px; right: 20px; display: flex; flex-direction: column; align-items: flex-end; z-index: 10; width: 220px; max-width: 30vw;}
+    .boss-name { font-weight: 800; font-size: 14px; text-shadow: 0 2px 4px #000; margin-bottom: 5px; color: #9b59b6; text-transform: uppercase; letter-spacing: 1px;}
+    .hp-bar-bg { width: 100%; height: 16px; background: rgba(0,0,0,0.8); border: 2px solid #000; border-radius: 10px; overflow: hidden; box-shadow: 0 0 15px #000, inset 0 0 10px rgba(0,0,0,0.8);}
+    .hp-bar-fill { width: 100%; height: 100%; background: linear-gradient(90deg, #8e44ad, #9b59b6); transition: width 0.5s ease-out; box-shadow: inset 0 2px 5px rgba(255,255,255,0.3);}
+    
+    .sound-toggle { margin-top: 10px; width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; transition: 0.3s; user-select: none;}
+    .sound-toggle:hover { border-color: var(--neon); box-shadow: 0 0 10px var(--neon); transform: scale(1.1);}
+
+    .arena-char { position: absolute; bottom: 5%; max-height: var(--hero-h); max-width: 40vw; object-fit: contain; filter: drop-shadow(0 20px 20px rgba(0,0,0,0.8)); transition: 0.1s;}
+    #hero-sprite { left: 5%; transform-origin: bottom center;}
+    
+    @keyframes hoverBoss { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+    .boss-wrapper { position: absolute; right: 5%; bottom: 5%; animation: hoverBoss 3.5s ease-in-out infinite; z-index: 5;}
+    #boss-sprite { max-height: var(--boss-h); max-width: 45vw; object-fit: contain; filter: drop-shadow(0 20px 20px rgba(0,0,0,0.8)); transition: 0.1s; transform-origin: bottom center; display: block;}
+    
+    @keyframes hitBoss { 0% { filter: brightness(3) sepia(1); transform: scale(0.95) rotate(-5deg); } 100% { filter: drop-shadow(0 20px 20px rgba(0,0,0,0.8)); transform: scale(1) rotate(0); } }
+    @keyframes hitHero { 0% { filter: brightness(1) sepia(1) hue-rotate(-50deg) saturate(5); transform: scale(0.95) rotate(5deg) translateX(-20px); } 100% { filter: drop-shadow(0 20px 20px rgba(0,0,0,0.8)); transform: scale(1) rotate(0) translateX(0); } }
+    .boss-damaged { animation: hitBoss 0.5s ease; }
+    .hero-damaged { animation: hitHero 0.5s ease; }
+
+    .quiz-panel { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); background: rgba(10, 20, 30, 0.85); border: 2px solid var(--neon); box-shadow: 0 10px 30px rgba(0,0,0,0.8); border-radius: 20px; padding: 15px 25px; width: 90%; max-width: 450px; display: flex; flex-direction: column; align-items: center; z-index: 20;}
+    .question-text { font-size: var(--q-size); font-weight: 800; text-align: center; margin-bottom: 15px; text-shadow: 0 2px 5px #000; line-height: 1.2;}
+    
+    .options-grid { display: flex; flex-direction: column; gap: 10px; width: 100%;}
+    .option-btn { background: rgba(255,255,255,0.05); color: var(--text-col); border: 1px solid rgba(255,255,255,0.3); padding: 10px 15px; border-radius: 10px; font-family: var(--font); font-size: var(--a-size); cursor: pointer; transition: 0.2s; text-align: left; position: relative; overflow: hidden; font-weight: 600; text-shadow: 0 1px 3px #000;}
+    .option-btn:hover:not(:disabled) { border-color: var(--neon); background: rgba(255,255,255,0.15); box-shadow: 0 0 15px var(--neon); transform: translateX(5px);}
+    .option-btn.correct { background: rgba(46, 204, 113, 0.4) !important; border-color: #2ecc71 !important; box-shadow: 0 0 20px #2ecc71 !important; color: #fff;}
+    .option-btn.wrong { background: rgba(231, 76, 60, 0.4) !important; border-color: #e74c3c !important; box-shadow: 0 0 20px #e74c3c !important; color: #fff;}
+
+    .input-mode-container { display: flex; gap: 10px; width: 100%; justify-content: center; align-items: stretch;}
+    .word-input { flex: 1; padding: 12px 15px; border-radius: 10px; border: 2px solid rgba(255,255,255,0.3); background: rgba(0,0,0,0.6); color: #fff; font-family: var(--font); font-size: var(--a-size); text-align: center; outline: none; transition: 0.3s; font-weight: bold;}
+    .word-input:focus { border-color: var(--neon); box-shadow: 0 0 15px rgba(0,0,0,0.5), inset 0 0 10px rgba(255,255,255,0.1);}
+    .submit-btn { background: rgba(0,0,0,0.5); color: var(--neon); border: 2px solid var(--neon); padding: 0 25px; border-radius: 10px; cursor: pointer; font-family: var(--font); font-size: var(--a-size); font-weight: bold; transition: 0.3s;}
+    .submit-btn:hover:not(:disabled) { background: var(--neon); color: #000; box-shadow: 0 0 15px var(--neon);}
+
+    .timer-container { width: 100%; height: 6px; background: rgba(0,0,0,0.8); border-radius: 3px; margin-bottom: 12px; overflow: hidden; display: ${conf.useTimer ? 'block' : 'none'}; box-shadow: inset 0 0 5px #000;}
+    .timer-bar { height: 100%; width: 100%; background: var(--neon); box-shadow: 0 0 10px var(--neon); transition: width 1s linear, background-color 0.5s; }
+    .timer-bar.warning { background: #e74c3c; box-shadow: 0 0 15px #e74c3c; }
+
+    .projectile { position: fixed; width: 100px; height: 100px; object-fit: contain; z-index: 50; transition: all 0.4s linear; ${projStyles} }
+
+    #end-screen { display: none; position: absolute; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); flex-direction: column; align-items: center; justify-content: center; z-index: 200;}
+    .end-msg { font-size: clamp(40px, 8vw, 80px); font-weight: 800; text-align: center; text-shadow: 0 0 30px var(--neon); margin-bottom: 40px; line-height: 1.2; padding: 0 20px; animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;}
+    .replay-btn { background: #111; color: var(--neon); border: 3px solid var(--neon); border-radius: 12px; padding: 15px 40px; font-family: var(--font); font-size: 24px; font-weight: 800; text-transform: uppercase; cursor: pointer; transition: 0.3s; box-shadow: 0 0 20px rgba(0,0,0,0.8); letter-spacing: 1px;}
+    .replay-btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 40px var(--neon); transform: scale(1.05);}
+
+    @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+    .damage-text { position: absolute; font-size: 50px; font-weight: 900; color: #fff; text-shadow: 0 0 15px #ff0000, 3px 3px 0 #000; pointer-events: none; animation: floatUp 1s ease-out forwards; z-index: 60;}
+    @keyframes floatUp { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-120px) scale(1.5); opacity: 0; } }
+    .fw-particle { position: fixed; width: 10px; height: 10px; border-radius: 50%; pointer-events: none; z-index: 9999; animation: shoot 1s ease-out forwards; }
+    @keyframes shoot { 0% { transform: translate(0,0) scale(1); opacity: 1; } 100% { transform: translate(var(--tx), var(--ty)) scale(0); opacity: 0; } }
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="damage-overlay" id="dmg-overlay"></div>
+    
+    <div id="select-screen">
+        <div class="select-title">CHOOSE YOUR HERO</div>
+        <button class="start-btn" id="start-btn" onclick="window.startGame()">${conf.startBtnText}</button>
+    </div>
+
+    <div id="battle-screen">
+        <div class="hud-hero">
+            <img src="" class="player-mini" id="player-avatar">
+            <div class="hearts-container" id="hearts-container"></div>
+        </div>
+        
+        <div class="hud-boss">
+            <div class="boss-name">BOSS HP</div>
+            <div class="hp-bar-bg"><div class="hp-bar-fill" id="boss-hp-bar"></div></div>
+            <div class="sound-toggle" id="sound-btn" onclick="window.toggleSound()">🔊</div>
+        </div>
+
+        <img src="" class="arena-char" id="hero-sprite">
+        
+        <div class="boss-wrapper">
+            <img src="${conf.bossImg}" id="boss-sprite">
+        </div>
+
+        <div class="quiz-panel">
+            <div class="timer-container"><div class="timer-bar" id="timer-bar"></div></div>
+            <div class="question-text" id="q-text"></div>
+            <div class="options-grid" id="options-grid"></div>
+        </div>
+    </div>
+
+    <div id="end-screen">
+        <div class="end-msg" id="end-msg"></div>
+        <button class="replay-btn" id="replay-btn">PLAY AGAIN</button>
+    </div>
+</div>
+
+<script>
+${finalScript}
+<\/script>
+</body>
+</html>`;
+
+            const escapedHTML = innerHTML.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+            const iframeCode = `<iframe style="width: 100%; height: 100%; border: none; background: transparent;" allowtransparency="true" srcdoc="${escapedHTML}"></iframe>`;
+
+            document.getElementById('generated-code').value = iframeCode;
+            document.getElementById('previewFrame').srcdoc = innerHTML;
+        }
+
+        function copyCode() {
+            generateCode(); 
+            const codeArea = document.getElementById('generated-code');
+            codeArea.select();
+            document.execCommand('copy');
+            const btn = document.getElementById('copyBtn');
+            btn.innerText = 'Скопировано!';
+            btn.style.background = '#2ecc71';
+            setTimeout(() => { 
+                btn.innerText = 'СГЕНЕРИРОВАТЬ IFRAME-КОД'; 
+                btn.style.background = 'linear-gradient(135deg, #d97706, #facc15)';
+            }, 2000);
+        }
+
+        let previewTimeout;
+        function debounceGenerate() {
+            clearTimeout(previewTimeout);
+            previewTimeout = setTimeout(generateCode, 800);
+        }
+
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            el.addEventListener('input', debounceGenerate);
+            el.addEventListener('change', debounceGenerate);
+        });
+
+        debounceGenerate();
+    </script>
+</body>
+</html>
