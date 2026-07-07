@@ -43,6 +43,23 @@
         #generated-code { height: 60px; margin-top: 10px; background: rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.2); color: #4ae38c; font-family: monospace; font-size: 11px;}
         .help-text { font-size: 11px; color: #8bbdc2; margin-top: 5px; line-height: 1.4;}
         .help-text span { color: #facc15; font-weight: bold;}
+
+        .input-with-button { display: flex; gap: 10px; }
+        .input-with-button input[type="text"] { flex: 1; }
+        .upload-btn {
+            padding: 0 15px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background-color: rgba(0,0,0,0.3);
+            color: #facc15;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+        .upload-btn:hover {
+            background-color: rgba(250, 204, 21, 0.2);
+            border-color: #facc15;
+        }
     </style>
 </head>
 <body>
@@ -140,7 +157,7 @@
             </div>
         </div>
 
-        <h3>Тексты и Картинки (Ссылки)</h3>
+        <h3>Тексты и Картинки</h3>
         <div class="flex-row">
             <div class="form-group flex-col">
                 <label>Заголовок стартового экрана</label>
@@ -154,23 +171,59 @@
         
         <div class="form-group">
             <label>Фон игры</label>
-            <input type="text" id="bgImg" value="https://i.postimg.cc/JnhHQ215/7a1ae0d06ba097f538c69e05901229d3-2b9ef9d7-f0d4-4c71-b4d0-9b8a30603457.jpg" oninput="debounceGenerate()">
+            <div class="input-with-button">
+                <input type="text" id="bgImg" value="https://i.postimg.cc/JnhHQ215/7a1ae0d06ba097f538c69e05901229d3-2b9ef9d7-f0d4-4c71-b4d0-9b8a30603457.jpg" oninput="debounceGenerate()">
+                <button class="upload-btn" onclick="document.getElementById('bgImg-file').click()" title="Загрузить файл">📂</button>
+            </div>
+            <input type="file" id="bgImg-file" accept="image/*" style="display:none;" data-target="bgImg" data-limit="5242880" onchange="handleImageUpload(event)">
+            <div class="help-text">Вставьте ссылку или загрузите файл (до 5 МБ).</div>
         </div>
         <div class="form-group">
             <label>Босс</label>
-            <input type="text" id="bossImg" value="https://i.postimg.cc/pLtkRzYd/Untitled-design.png" oninput="debounceGenerate()">
+            <div class="input-with-button">
+                <input type="text" id="bossImg" value="https://i.postimg.cc/pLtkRzYd/Untitled-design.png" oninput="debounceGenerate()">
+                <button class="upload-btn" onclick="document.getElementById('bossImg-file').click()" title="Загрузить файл">📂</button>
+            </div>
+            <input type="file" id="bossImg-file" accept="image/*" style="display:none;" data-target="bossImg" data-limit="2097152" onchange="handleImageUpload(event)">
+            <div class="help-text">Вставьте ссылку или загрузите файл (до 2 МБ).</div>
         </div>
         <div class="form-group">
             <label>Герой</label>
-            <input type="text" id="heroImg" value="https://i.postimg.cc/Jz16jjyn/Untitled-design2.png" oninput="debounceGenerate()">
+            <div class="input-with-button">
+                <input type="text" id="heroImg" value="https://i.postimg.cc/Jz16jjyn/Untitled-design2.png" oninput="debounceGenerate()">
+                <button class="upload-btn" onclick="document.getElementById('heroImg-file').click()" title="Загрузить файл">📂</button>
+            </div>
+            <input type="file" id="heroImg-file" accept="image/*" style="display:none;" data-target="heroImg" data-limit="2097152" onchange="handleImageUpload(event)">
+            <div class="help-text">Вставьте ссылку или загрузите файл (до 2 МБ).</div>
         </div>
         <div class="flex-row">
-            <div class="form-group flex-col"><label>Снаряд Героя</label><input type="text" id="heroProj" value="https://i.postimg.cc/kGw2trRn/pngwing-com-(63).png" oninput="debounceGenerate()"></div>
-            <div class="form-group flex-col"><label>Снаряд Босса</label><input type="text" id="bossProj" value="https://i.postimg.cc/5ypXFcQ4/pngwing-com-(31).png" oninput="debounceGenerate()"></div>
+            <div class="form-group flex-col">
+                <label>Снаряд Героя</label>
+                <div class="input-with-button">
+                    <input type="text" id="heroProj" value="https://i.postimg.cc/kGw2trRn/pngwing-com-(63).png" oninput="debounceGenerate()">
+                    <button class="upload-btn" onclick="document.getElementById('heroProj-file').click()" title="Загрузить файл">📂</button>
+                </div>
+                <input type="file" id="heroProj-file" accept="image/*" style="display:none;" data-target="heroProj" data-limit="2097152" onchange="handleImageUpload(event)">
+                <div class="help-text">(до 2 МБ)</div>
+            </div>
+            <div class="form-group flex-col">
+                <label>Снаряд Босса</label>
+                <div class="input-with-button">
+                    <input type="text" id="bossProj" value="https://i.postimg.cc/5ypXFcQ4/pngwing-com-(31).png" oninput="debounceGenerate()">
+                    <button class="upload-btn" onclick="document.getElementById('bossProj-file').click()" title="Загрузить файл">📂</button>
+                </div>
+                <input type="file" id="bossProj-file" accept="image/*" style="display:none;" data-target="bossProj" data-limit="2097152" onchange="handleImageUpload(event)">
+                <div class="help-text">(до 2 МБ)</div>
+            </div>
         </div>
         <div class="form-group">
             <label>Иконка жизни / Сердечко</label>
-            <input type="text" id="heartImg" value="https://i.postimg.cc/KvL74jJr/pngwing-com-(80).png" oninput="debounceGenerate()">
+            <div class="input-with-button">
+                <input type="text" id="heartImg" value="https://i.postimg.cc/KvL74jJr/pngwing-com-(80).png" oninput="debounceGenerate()">
+                <button class="upload-btn" onclick="document.getElementById('heartImg-file').click()" title="Загрузить файл">📂</button>
+            </div>
+            <input type="file" id="heartImg-file" accept="image/*" style="display:none;" data-target="heartImg" data-limit="2097152" onchange="handleImageUpload(event)">
+            <div class="help-text">Вставьте ссылку или загрузите файл (до 2 МБ).</div>
         </div>
 
         <h3>Логика Игры</h3>
@@ -222,6 +275,36 @@ were|would be|am</textarea>
     </div>
 
     <script>
+        function handleImageUpload(event) {
+            const fileInput = event.target;
+            const targetInputId = fileInput.dataset.target;
+            const sizeLimit = parseInt(fileInput.dataset.limit);
+            const targetInput = document.getElementById(targetInputId);
+
+            const file = fileInput.files[0];
+            if (!file) {
+                return;
+            }
+
+            if (file.size > sizeLimit) {
+                alert(`Файл слишком большой! Максимальный размер: ${(sizeLimit / 1024 / 1024).toFixed(1)} МБ.`);
+                fileInput.value = ''; // Clear the selected file
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                targetInput.value = e.target.result;
+                debounceGenerate(); // Trigger preview update
+            };
+            reader.onerror = function() {
+                alert('Не удалось прочитать файл.');
+            };
+            reader.readAsDataURL(file);
+
+            fileInput.value = ''; // Allow re-uploading the same file
+        }
+
         function getInputs() {
             return {
                 taskType: document.getElementById('taskType').value,
@@ -287,7 +370,6 @@ were|would be|am</textarea>
     };
     const lang = dict['${conf.lang}'] || dict['EN'];
     
-    document.querySelector('.select-title').innerText = "${conf.startTitle}";
     document.getElementById('replay-btn').innerText = lang.replay;
 
     const quizData = ${quizJSON};
@@ -617,7 +699,7 @@ were|would be|am</textarea>
     <div class="damage-overlay" id="dmg-overlay"></div>
     
     <div id="select-screen">
-        <div class="select-title">CHOOSE YOUR HERO</div>
+        <div class="select-title">${conf.startTitle}</div>
         <button class="start-btn" id="start-btn" onclick="window.startGame()">${conf.startBtnText}</button>
     </div>
 
